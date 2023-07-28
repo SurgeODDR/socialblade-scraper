@@ -223,6 +223,7 @@ def append_data_to_sheet(sheet, headers: List[str], data: List):
     if len(all_values) == 0:
         sheet.append_row(headers)
     for row in data:
+        row = [json.dumps(cell) if isinstance(cell, (list, dict)) else cell for cell in row]
         sheet.append_row(row)
 
 @app.route('/fetch_data', methods=['GET'])
