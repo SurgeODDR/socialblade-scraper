@@ -1,4 +1,5 @@
 import os
+import time
 import json
 import pandas as pd
 import requests
@@ -227,6 +228,10 @@ def fetch_data():
             headers = rename_headers(headers)
             headers = [header for header in headers if header in flat_data.columns]  # Only keep headers present in flat_data
             flat_data = flat_data[headers]
+            
+            # Add a delay here
+            time.sleep(1.1)  # Adjust the delay as needed to fit within your rate limits
+            
             append_data_to_sheet(worksheet, headers, flat_data.values.tolist())
 
     return jsonify({'message': 'Data fetched successfully'}), 200
