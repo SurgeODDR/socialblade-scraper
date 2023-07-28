@@ -12,26 +12,16 @@ from typing import List
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
 
-# Get a credential to authenticate to the Key Vault
 credential = DefaultAzureCredential()
-
-# Create a secret client using the credential
 secret_client = SecretClient(vault_url="https://keyvaultxscrapingoddr.vault.azure.net/", credential=credential)
-
-# Retrieve the secret
 secret = secret_client.get_secret("YT-Scraper-web-googleservicekey")
-
-# Use the secret value as the Google service account key
 creds = ServiceAccountCredentials.from_json_keyfile_dict(json.loads(secret.value))
 
 app = Flask(__name__)
-
-# Load configurations from environment variables
 app.config['CLIENT_ID'] = os.getenv('CLIENT_ID')
 app.config['ACCESS_TOKEN'] = os.getenv('ACCESS_TOKEN')
 api_url = "https://matrix.sbapis.com/b/{}/statistics"
 
-# Unchanged code from the original script
 platforms_users = {
     "twitch": ["twistzztv", "jLcs2", "rekkles", "nisqyy", "bwipolol", "Cabochardlol", "caedrel", "spicalol", "jensen", "zyblol", "caedrel", "yamatocannon", "tenacityna", "kiittwy", "caedrel", "Rush", "mediccasts", "tifa_lol", "lizialol", "colomblbl", "karinak"],
     "youtube": ["Twistzz", "nisqy9099", "UCqA5q4Qj0oFtsCXzAwzvJ5w", "caedrel", "kiittylol", "rushlol"],
@@ -40,12 +30,156 @@ platforms_users = {
     "tiktok": ["twistzzca", "jlcsgo", "lolrekkles", "zyblol", "caedrel", "colomblbl", "karinaklol"]
 }
 
-# Initialize a client to interact with Google Sheets
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive']
 client = gspread.authorize(creds)
-
-# Open the spreadsheet
 spreadsheet = client.open('twitch_data')
+
+ignore_columns = [
+    "status.success",
+    "data.general.media.recent",
+    "data.general.geo.broadcaster_language",
+    "data.general.geo.location",
+    "data.misc.twitter_verified",
+    "data.ranks.tweets",
+    "status.status",
+    "info.access.seconds_to_expire",
+    "info.access.expires_at",
+    "info.credits.available",
+    "info.credits.premium-credits",
+    "data.general.created_at",
+    "data.general.channel_type",
+    "data.general.geo.country_code",
+    "data.general.branding.banner",
+    "data.general.branding.website",
+    "data.general.branding.social.facebook",
+    "data.general.branding.social.twitter",
+    "data.general.branding.social.twitch",
+    "data.general.branding.social.instagram",
+    "data.general.branding.social.linkedin",
+    "data.general.branding.social.discord",
+    "data.general.branding.social.tiktok",
+    "data.misc.grade.color",
+    "data.misc.grade.grade",
+    "data.misc.sb_verified",
+    "data.misc.made_for_kids",
+    "data.misc.tags",
+    "data.ranks.sbrank",
+    "data.ranks.subscribers",
+    "data.ranks.views",
+    "data.ranks.country",
+    "data.ranks.channel_type",
+    "data.badges",
+    "data.daily",
+    "data.misc.grade.color",
+    "data.misc.grade.grade",
+    "data.misc.sb_verified",
+    "data.ranks.sbrank",
+    "data.ranks.followers",
+    "data.ranks.following",
+    "data.ranks.uploads",
+    "data.ranks.likes",
+    "status.success",
+    "status.status",
+    "info.access.seconds_to_expire",
+    "info.access.expires_at",
+    "info.credits.available",
+    "info.credits.premium-credits",
+    "data.general.branding.avatar",
+    "data.id.id",
+]
+
+def rename_headers(headers: List[str]) -> List[str]:
+    header_mapping = {
+        "status.success": "Status Success",
+        "status.status": "Status",
+        "info.access.seconds_to_expire": "Access Expiration Time (Seconds)",
+        "info.access.expires_at": "Access Expiration Time",
+        "info.credits.available": "Available Credits",
+        "info.credits.premium-credits": "Available Premium Credits",
+        "data.id.id": "ID",
+        "data.id.username": "Username",
+        "data.id.cusername": "Custom Username",
+        "data.id.handle": "Handle",
+        "data.id.display_name": "Display Name",
+        "data.general.created_at": "Account Creation Date",
+        "data.general.channel_type": "Channel Type",
+        "data.general.geo.country_code": "Country Code",
+        "data.general.geo.country": "Country",
+        "data.general.branding.avatar": "Avatar URL",
+        "data.general.branding.banner": "Banner URL",
+        "data.general.branding.website": "Website",
+        "data.general.branding.social.facebook": "Facebook Page",
+        "data.general.branding.social.twitter": "Twitter Handle",
+        "data.general.branding.social.twitch": "Twitch Handle",
+        "data.general.branding.social.instagram": "Instagram Handle",
+        "data.general.branding.social.linkedin": "LinkedIn Profile",
+        "data.general.branding.social.discord": "Discord Server",
+        "data.general.branding.social.tiktok": "TikTok Handle",
+        "data.statistics.total.uploads": "Total Uploads",
+        "data.statistics.total.subscribers": "Total Subscribers",
+        "data.statistics.total.views": "Total Views",
+        "data.statistics.growth.subs.1": "Subscribers Growth (1 day)",
+        "data.statistics.growth.subs.3": "Subscribers Growth (3 days)",
+        "data.statistics.growth.subs.7": "Subscribers Growth (7 days)",
+        "data.statistics.growth.subs.14": "Subscribers Growth (14 days)",
+        "data.statistics.growth.subs.30": "Subscribers Growth (30 days)",
+        "data.statistics.growth.subs.60": "Subscribers Growth (60 days)",
+        "data.statistics.growth.subs.90": "Subscribers Growth (90 days)",
+        "data.statistics.growth.subs.180": "Subscribers Growth (180 days)",
+        "data.statistics.growth.subs.365": "Subscribers Growth (365 days)",
+        "data.statistics.growth.vidviews.1": "Views Growth (1 day)",
+        "data.statistics.growth.vidviews.3": "Views Growth (3 days)",
+        "data.statistics.growth.vidviews.7": "Views Growth (7 days)",
+        "data.statistics.growth.vidviews.14": "Views Growth (14 days)",
+        "data.statistics.growth.vidviews.30": "Views Growth (30 days)",
+        "data.statistics.growth.vidviews.60": "Views Growth (60 days)",
+        "data.statistics.growth.vidviews.90": "Views Growth (90 days)",
+        "data.statistics.growth.vidviews.180": "Views Growth (180 days)",
+        "data.statistics.growth.vidviews.365": "Views Growth (365 days)",
+        "data.misc.grade.color": "Grade Color",
+        "data.misc.grade.grade": "Grade",
+        "data.misc.sb_verified": "Verified on Social Blade",
+        "data.misc.made_for_kids": "Made for Kids",
+        "data.misc.tags": "Tags",
+        "data.ranks.sbrank": "Social Blade Rank",
+        "data.ranks.subscribers": "Subscribers Rank",
+        "data.ranks.views": "Views Rank",
+        "data.ranks.country": "Country Rank",
+        "data.ranks.channel_type": "Channel Type Rank",
+        "data.badges": "Badges",
+        "data.statistics.total.followers": "Total Followers",
+        "data.statistics.total.following": "Total Following",
+        "data.statistics.total.tweets": "Total Tweets",
+        "data.statistics.growth.followers.1": "Follower Growth (1 day)",
+        "data.statistics.growth.followers.3": "Follower Growth (3 days)",
+        "data.statistics.growth.followers.7": "Follower Growth (7 days)",
+        "data.statistics.growth.followers.14": "Follower Growth (14 days)",
+        "data.statistics.growth.followers.30": "Follower Growth (30 days)",
+        "data.statistics.growth.followers.60": "Follower Growth (60 days)",
+        "data.statistics.growth.followers.90": "Follower Growth (90 days)",
+        "data.statistics.growth.followers.180": "Follower Growth (180 days)",
+        "data.statistics.growth.followers.365": "Follower Growth (365 days)",
+        "data.statistics.growth.tweets.1": "Tweet Growth (1 day)",
+        "data.statistics.growth.tweets.3": "Tweet Growth (3 days)",
+        "data.statistics.growth.tweets.7": "Tweet Growth (7 days)",
+        "data.statistics.growth.tweets.14": "Tweet Growth (14 days)",
+        "data.statistics.growth.tweets.30": "Tweet Growth (30 days)",
+        "data.statistics.growth.tweets.60": "Tweet Growth (60 days)",
+        "data.statistics.growth.tweets.90": "Tweet Growth (90 days)",
+        "data.statistics.growth.tweets.180": "Tweet Growth (180 days)",
+        "data.statistics.growth.tweets.365": "Tweet Growth (365 days)",
+        "data.misc.recent.game": "Recent Game",
+        "data.misc.recent.status": "Recent Status",
+        "data.misc.mature_warning": "Mature Warning",
+        "data.ranks.followers": "Followers Rank",
+        "data.ranks.following": "Following Rank",
+        "data.ranks.uploads": "Uploads Rank",
+        "data.ranks.likes": "Likes Rank",
+        "data.daily": "Daily Data",
+        "data.statistics.total.likes": "Total Likes"
+    }
+    new_headers = [header_mapping.get(header, header) for header in headers if header not in ignore_columns]
+    return new_headers
 
 def get_socialblade_data(platform: str, username: str) -> dict:
     url = api_url.format(platform)
@@ -69,12 +203,14 @@ def get_socialblade_data(platform: str, username: str) -> dict:
     return data
 
 def append_data_to_sheet(sheet, headers: List[str], data: List):
-    # Unchanged code from the original script
-    pass
+    all_values = sheet.get_all_values()
+    if len(all_values) == 0:
+        sheet.append_row(headers)
+    for row in data:
+        sheet.append_row(row)
 
 @app.route('/fetch_data', methods=['POST'])
 def fetch_data():
-    # Input validation
     platforms_users = request.json.get('platforms_users')
     if not platforms_users:
         raise BadRequest('Invalid input: platforms_users is required.')
@@ -92,13 +228,12 @@ def fetch_data():
 
             flat_data = pd.json_normalize(data)
             headers = flat_data.columns.tolist()
-            headers = [h for h in headers if h not in ignore_columns]
+            headers = rename_headers(headers)
             flat_data = flat_data[headers]
             append_data_to_sheet(worksheet, headers, flat_data.values.tolist())
 
     return jsonify({'message': 'Data fetched successfully'}), 200
 
-# Error handling
 @app.errorhandler(BadRequest)
 def handle_bad_request(e):
     return jsonify({'message': str(e)}), 400
