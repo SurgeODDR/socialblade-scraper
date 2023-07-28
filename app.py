@@ -225,6 +225,7 @@ def fetch_data():
             flat_data = pd.json_normalize(data)
             headers = flat_data.columns.tolist()
             headers = rename_headers(headers)
+            headers = [header for header in headers if header in flat_data.columns]  # Only keep headers present in flat_data
             flat_data = flat_data[headers]
             append_data_to_sheet(worksheet, headers, flat_data.values.tolist())
 
