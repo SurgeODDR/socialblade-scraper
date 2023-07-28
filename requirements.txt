@@ -3,3 +3,13 @@ gspread
 oauth2client
 pandas
 requests
+azure-identity
+requests-oauthlib
+azure-keyvault-secrets
+jinja2
+google-api-python-client
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+httplib2
+apscheduler
