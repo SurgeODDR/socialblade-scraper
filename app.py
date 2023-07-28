@@ -224,9 +224,13 @@ def batch_append_to_sheet(sheet, headers: List[str], data: List):
         sheet.append_row(headers)
     batch_size = 100  # Adjust this based on your needs and quota limits
     for i in range(0, len(data), batch_size):
-        batch_data = data[i:i+batch_size]
-        batch_data = [[json.dumps(cell) if isinstance(cell, (list, dict)) else cell for cell in row] for row in batch_data]
-        sheet.append_rows(batch_data)
+        try:
+            batch_data = data[i:i+batch_size]
+            batch_data = [[json.dumps(cell) if isinstance(cell, (list, dict)) else cell for cell in row] for row in batch_data]
+            sheet.append_rows(batch_data)
+        except Exception as e:
+            app.logger.error(f"Failed to append data to sheet: {str(e)}")
+            return
 
 @app.route('/fetch_data', methods=['GET'])
 def fetch_data():
@@ -242,7 +246,12 @@ def fetch_data():
             if data is None:
                 continue
 
-            flat_data = pd.json_normalize(data)
+            try:
+                flat_data = pd.json_normalize(data)
+            except Exception as e:
+                app.logger.error(f"Failed to normalize data for {platform}/{user}: {str(e)}")
+                continue
+
             headers = flat_data.columns.tolist()
             headers = rename_headers(headers)
             headers = [header for header in headers if header in flat_data.columns]  # Only keep headers present in flat_data
@@ -252,7 +261,10 @@ def fetch_data():
             # Add a delay here
             time.sleep(1.1)  # Adjust the delay as needed to fit within your rate limits
 
-        batch_append_to_sheet(worksheet, headers, all_data)
+        if all_data:
+            batch_append_to_sheet(worksheet, headers, all_data)
+        else:
+            app.logger.error(f"No data fetched for platform {platform}")
 
     return jsonify({'message': 'Data fetched successfully'}), 200
 
