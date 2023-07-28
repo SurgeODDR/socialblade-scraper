@@ -218,13 +218,15 @@ def get_socialblade_data(platform: str, username: str) -> dict:
 
     return data
 
-def append_data_to_sheet(sheet, headers: List[str], data: List):
+def batch_append_to_sheet(sheet, headers: List[str], data: List):
     all_values = sheet.get_all_values()
     if len(all_values) == 0:
         sheet.append_row(headers)
-    for row in data:
-        row = [json.dumps(cell) if isinstance(cell, (list, dict)) else cell for cell in row]
-        sheet.append_row(row)
+    batch_size = 100  # Adjust this based on your needs and quota limits
+    for i in range(0, len(data), batch_size):
+        batch_data = data[i:i+batch_size]
+        batch_data = [[json.dumps(cell) if isinstance(cell, (list, dict)) else cell for cell in row] for row in batch_data]
+        sheet.append_rows(batch_data)
 
 @app.route('/fetch_data', methods=['GET'])
 def fetch_data():
@@ -234,6 +236,7 @@ def fetch_data():
         except gspread.exceptions.WorksheetNotFound:
             worksheet = spreadsheet.add_worksheet(title=platform, rows="100", cols="20")
 
+        all_data = []
         for user in users:
             data = get_socialblade_data(platform, user)
             if data is None:
@@ -244,11 +247,12 @@ def fetch_data():
             headers = rename_headers(headers)
             headers = [header for header in headers if header in flat_data.columns]  # Only keep headers present in flat_data
             flat_data = flat_data[headers]
-            
+            all_data.extend(flat_data.values.tolist())
+
             # Add a delay here
             time.sleep(1.1)  # Adjust the delay as needed to fit within your rate limits
-            
-            append_data_to_sheet(worksheet, headers, flat_data.values.tolist())
+
+        batch_append_to_sheet(worksheet, headers, all_data)
 
     return jsonify({'message': 'Data fetched successfully'}), 200
 
