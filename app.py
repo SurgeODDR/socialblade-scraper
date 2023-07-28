@@ -209,12 +209,8 @@ def append_data_to_sheet(sheet, headers: List[str], data: List):
     for row in data:
         sheet.append_row(row)
 
-@app.route('/fetch_data', methods=['POST'])
+@app.route('/fetch_data', methods=['GET'])
 def fetch_data():
-    platforms_users = request.json.get('platforms_users')
-    if not platforms_users:
-        raise BadRequest('Invalid input: platforms_users is required.')
-
     for platform, users in platforms_users.items():
         try:
             worksheet = spreadsheet.worksheet(platform)
