@@ -9,6 +9,22 @@ from flask import Flask, request, jsonify
 from werkzeug.exceptions import BadRequest, InternalServerError
 from typing import List
 
+from azure.identity import DefaultAzureCredential
+from azure.keyvault.secrets import SecretClient
+
+# Get a credential to authenticate to the Key Vault
+credential = DefaultAzureCredential()
+
+# Create a secret client using the credential
+secret_client = SecretClient(vault_url="https://keyvaultxscrapingoddr.vault.azure.net/", credential=credential)
+
+# Retrieve the secret
+secret = secret_client.get_secret("YT-Scraper-web-googleservicekey")
+
+# Use the secret value as the Google service account key
+creds = ServiceAccountCredentials.from_json_keyfile_dict(json.loads(secret.value))
+
+
 app = Flask(__name__)
 
 # Load configurations from environment variables
