@@ -7,13 +7,9 @@ from flask import Flask, request, jsonify
 from werkzeug.exceptions import BadRequest, InternalServerError
 from typing import List
 from azure.identity import DefaultAzureCredential
-from azure.keyvault.secrets import SecretClient
 from azure.storage.blob import BlobServiceClient
 
 credential = DefaultAzureCredential()
-secret_client = SecretClient(vault_url="https://keyvaultxscrapingoddr.vault.azure.net/", credential=credential)
-secret = secret_client.get_secret("YT-Scraper-web-googleservicekey")
-creds = json.loads(secret.value)
 
 # Set up BlobServiceClient
 blob_service_client = BlobServiceClient(account_url=os.getenv('AZURE_STORAGE_ACCOUNT_URL'), credential=credential)
