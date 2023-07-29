@@ -198,13 +198,14 @@ def rename_headers(headers: List[str]) -> dict:
 @app.route('/fetch-data', methods=['GET'])
 def fetch_data():
     for platform, users in platforms_users.items():
-        platform_df = pd.DataFrame()  # Create an empty DataFrame for the platform
+        dfs = []  # Create an empty list for storing dataframes
         for user in users:
             response = requests.get(api_url.format(platform, user), headers={'CLIENT_ID': app.config['CLIENT_ID'], 'ACCESS_TOKEN': app.config['ACCESS_TOKEN']})
             data = response.json()
             df = pd.json_normalize(data)
             df.rename(columns=rename_headers(df.columns), inplace=True)  # Rename columns using new_header_mapping
-            platform_df = platform_df.append(df, ignore_index=True)  # Append user's data to the platform DataFrame
+            dfs.append(df)  # Append the DataFrame to the list
+        platform_df = pd.concat(dfs, ignore_index=True)  # Concatenate all dataframes in the list
         csv_data = platform_df.to_csv(index=False)  # Convert the entire platform DataFrame to CSV
         blob_name = f'{platform}_{time.strftime("%Y%m%d-%H%M%S")}.csv'
         blob_client = container_client.get_blob_client(blob_name)
