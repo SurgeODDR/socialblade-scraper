@@ -194,8 +194,12 @@ def rename_headers(headers: List[str]) -> dict:
 @app.route('/fetch-data', methods=['GET'])
 def fetch_data():
     for platform, users in platforms_users.items():
+        if not platform:
+            return jsonify({"status": "error", "message": "platform is empty"}), 400
         dfs = []  # Create an empty list for storing dataframes
         for user in users:
+            if not user:
+                return jsonify({"status": "error", "message": "user is empty"}), 400
             response = requests.get(
                 api_url.format(platform, user),
                 headers={
