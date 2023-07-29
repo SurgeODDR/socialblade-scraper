@@ -196,7 +196,13 @@ def fetch_data():
     for platform, users in platforms_users.items():
         dfs = []  # Create an empty list for storing dataframes
         for user in users:
-            response = requests.get(api_url.format(platform, user), headers={'CLIENT_ID': app.config['CLIENT_ID'], 'ACCESS_TOKEN': app.config['ACCESS_TOKEN']})
+            response = requests.get(
+                api_url.format(platform, user),
+                headers={
+                    'clientid': app.config['CLIENT_ID'],
+                    'token': app.config['ACCESS_TOKEN']
+                }
+            )
             data = response.json()
             df = pd.json_normalize(data)
             df.rename(columns=rename_headers(df.columns), inplace=True)  # Rename columns using new_header_mapping
