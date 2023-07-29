@@ -12,11 +12,17 @@ from typing import List
 
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
+from azure.storage.blob import BlobServiceClient
 
 credential = DefaultAzureCredential()
 secret_client = SecretClient(vault_url="https://keyvaultxscrapingoddr.vault.azure.net/", credential=credential)
 secret = secret_client.get_secret("YT-Scraper-web-googleservicekey")
 creds = ServiceAccountCredentials.from_json_keyfile_dict(json.loads(secret.value))
+
+# Set up BlobServiceClient
+blob_service_client = BlobServiceClient(account_url=os.getenv('AZURE_STORAGE_ACCOUNT_URL'), credential=credential)
+container_name = 'scrapingstoragecontainer'
+container_client = blob_service_client.get_container_client(container_name)
 
 app = Flask(__name__)
 app.config['CLIENT_ID'] = os.getenv('CLIENT_ID')
@@ -197,40 +203,14 @@ def rename_headers(headers: List[str]) -> List[str]:
     new_headers = [header_mapping.get(header, header) for header in headers if header not in ignore_columns]
     return new_headers
 
-def get_socialblade_data(platform: str, username: str) -> dict:
-    url = api_url.format(platform)
-    headers = {
-        "clientid": app.config['CLIENT_ID'],
-        "token": app.config['ACCESS_TOKEN'],
-        "query": username
-    }
-    response = requests.get(url, headers=headers)
-
-    if response.status_code != 200:
-        app.logger.error(f"Failed to get data from SocialBlade for {platform}/{username}. HTTP status code: {response.status_code}")
-        return None
-
+def upload_to_blob(blob_name, data, blob_service_client):
+    blob_client = blob_service_client.get_blob_client(blob_name)
+    
     try:
-        data = response.json()
-    except json.JSONDecodeError:
-        app.logger.error(f"Failed to decode JSON from SocialBlade response for {platform}/{username}")
-        return None
-
-    return data
-
-def batch_append_to_sheet(sheet, headers: List[str], data: List):
-    all_values = sheet.get_all_values()
-    if len(all_values) == 0:
-        sheet.append_row(headers)
-    batch_size = 100  # Adjust this based on your needs and quota limits
-    for i in range(0, len(data), batch_size):
-        try:
-            batch_data = data[i:i+batch_size]
-            batch_data = [[json.dumps(cell) if isinstance(cell, (list, dict)) else cell for cell in row] for row in batch_data]
-            sheet.append_rows(batch_data)
-        except Exception as e:
-            app.logger.error(f"Failed to append data to sheet: {str(e)}")
-            return
+        blob_client.upload_blob(data, overwrite=True)
+    except Exception as e:
+        app.logger.error(f"Failed to upload data to blob: {str(e)}")
+        return
 
 @app.route('/fetch_data', methods=['GET'])
 def fetch_data():
@@ -263,6 +243,12 @@ def fetch_data():
 
         if all_data:
             batch_append_to_sheet(worksheet, headers, all_data)
+
+            # Create a CSV string from all_data
+            csv_data = pd.DataFrame(all_data, columns=headers).to_csv(index=False)
+
+            # Upload the CSV string to Azure Blob Storage
+            upload_to_blob(f"{platform}_data.csv", csv_data, blob_service_client)
         else:
             app.logger.error(f"No data fetched for platform {platform}")
 
