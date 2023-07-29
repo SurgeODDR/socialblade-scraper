@@ -207,7 +207,24 @@ def fetch_data():
                     'token': app.config['ACCESS_TOKEN']
                 }
             )
-            data = response.json()
+            
+            # Print the response before parsing:
+            print(response.text)
+            
+            # Check the response status code:
+            print(response.status_code)
+            
+            # Check for JSON response:
+            if response.status_code != 200 or not response.text.strip():
+                print(f"Error fetching data for {user} on {platform}. Skipping.")
+                continue
+
+            try:
+                data = response.json()
+            except requests.exceptions.RequestException as err:
+                print(f"Request error for {user} on {platform}: {err}")
+                continue
+
             df = pd.json_normalize(data)
             df.rename(columns=rename_headers(df.columns), inplace=True)  # Rename columns using new_header_mapping
             dfs.append(df)  # Append the DataFrame to the list
@@ -217,6 +234,3 @@ def fetch_data():
         blob_client = container_client.get_blob_client(blob_name)
         blob_client.upload_blob(csv_data, blob_type="BlockBlob")
     return jsonify({"status": "success"}), 200
-
-if __name__ == '__main__':
-    app.run(debug=True)
