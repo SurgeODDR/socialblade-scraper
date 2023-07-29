@@ -20,7 +20,7 @@ api_url = "https://matrix.sbapis.com/b/{}/statistics"
 
 platforms_users = {
     "twitch": ["twistzztv", "jLcs2", "rekkles", "nisqyy", "bwipolol", "Cabochardlol", "caedrel", "spicalol", "jensen", "zyblol", "caedrel", "yamatocannon", "tenacityna", "kiittwy", "caedrel", "Rush", "mediccasts", "tifa_lol", "lizialol", "colomblbl", "karinak"],
-    "youtube": ["Twistzz", "@nisqy9099", "UCqA5q4Qj0oFtsCXzAwzvJ5w", "caedrel", "kiittylol", "@rushlol"],
+    "youtube": ["Twistzz", "nisqy9099", "UCqA5q4Qj0oFtsCXzAwzvJ5w", "caedrel", "kiittylol", "rushlol"],
     "instagram": ["twistzzcs", "jlekavicius", "rekkles", "nisqylol", "bwipolol", "cabochardlol", "jensenliquid", "caedrel", "yamatocannon1", "kiittwy", "rushlol", "mediccasts", "tifa_lol", "lizialol", "colomblbl", "karinak_lol"],
     "twitter": ["Twistzz", "jLcsgo_", "RekklesLoL", "Nisqy", "Bwipo", "CabochardLoL", "Caedrel", "Spicalol", "Jensen", "zyblol", "yamatomebdi", "RushLoL", "TIFA_LoL", "lizialol", "Colomblbl", "karinak_lol"],
     "tiktok": ["twistzzca", "jlcsgo", "lolrekkles", "zyblol", "caedrel", "colomblbl", "karinaklol"]
@@ -31,6 +31,7 @@ def fetch_data():
     for platform, users in platforms_users.items():
         if not platform:
             return jsonify({"status": "error", "message": "platform is empty"}), 400
+        data_list = []
         for user in users:
             if not user:
                 return jsonify({"status": "error", "message": "user is empty"}), 400
@@ -62,9 +63,11 @@ def fetch_data():
                 app.logger.error(f"API request unsuccessful for {platform}/{user}")
                 continue
 
-            json_data = json.dumps(data)
-            blob_name = f'{platform}_{user}_{time.strftime("%Y%m%d-%H%M%S")}.json'
-            blob_client = container_client.get_blob_client(blob_name)
-            blob_client.upload_blob(json_data, blob_type="BlockBlob")
+            data_list.append(data)
+
+        json_data = json.dumps(data_list)
+        blob_name = f'{platform}_talent_data.json'
+        blob_client = container_client.get_blob_client(blob_name)
+        blob_client.upload_blob(json_data, blob_type="BlockBlob")
 
     return jsonify({"status": "success"}), 200
