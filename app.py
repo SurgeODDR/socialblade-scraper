@@ -3,13 +3,9 @@ import time
 import json
 import pandas as pd
 import requests
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-from pandas import json_normalize
 from flask import Flask, request, jsonify
 from werkzeug.exceptions import BadRequest, InternalServerError
 from typing import List
-
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
 from azure.storage.blob import BlobServiceClient
@@ -17,7 +13,7 @@ from azure.storage.blob import BlobServiceClient
 credential = DefaultAzureCredential()
 secret_client = SecretClient(vault_url="https://keyvaultxscrapingoddr.vault.azure.net/", credential=credential)
 secret = secret_client.get_secret("YT-Scraper-web-googleservicekey")
-creds = ServiceAccountCredentials.from_json_keyfile_dict(json.loads(secret.value))
+creds = json.loads(secret.value)
 
 # Set up BlobServiceClient
 blob_service_client = BlobServiceClient(account_url=os.getenv('AZURE_STORAGE_ACCOUNT_URL'), credential=credential)
@@ -36,10 +32,6 @@ platforms_users = {
     "twitter": ["Twistzz", "jLcsgo_", "RekklesLoL", "Nisqy", "Bwipo", "CabochardLoL", "Caedrel", "Spicalol", "Jensen", "zyblol", "yamatomebdi", "RushLoL", "TIFA_LoL", "lizialol", "Colomblbl", "karinak_lol"],
     "tiktok": ["twistzzca", "jlcsgo", "lolrekkles", "zyblol", "caedrel", "colomblbl", "karinaklol"]
 }
-
-scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive']
-client = gspread.authorize(creds)
-spreadsheet = client.open('twitch_data')
 
 ignore_columns = [
     "status.success",
@@ -203,86 +195,19 @@ def rename_headers(headers: List[str]) -> List[str]:
     new_headers = [header_mapping.get(header, header) for header in headers if header not in ignore_columns]
     return new_headers
 
-def get_socialblade_data(platform: str, username: str) -> dict:
-    url = api_url.format(platform)
-    headers = {
-        "clientid": app.config['CLIENT_ID'],
-        "token": app.config['ACCESS_TOKEN'],
-        "query": username
-    }
-    response = requests.get(url, headers=headers)
-
-    if response.status_code != 200:
-        app.logger.error(f"Failed to get data from SocialBlade for {platform}/{username}. HTTP status code: {response.status_code}")
-        return None
-
-    try:
-        data = response.json()
-    except json.JSONDecodeError:
-        app.logger.error(f"Failed to decode JSON from SocialBlade response for {platform}/{username}")
-        return None
-
-    return data
-
-def upload_to_blob(blob_name, data, blob_service_client):
-    blob_client = blob_service_client.get_blob_client(blob_name)
-    
-    try:
-        blob_client.upload_blob(data, overwrite=True)
-    except Exception as e:
-        app.logger.error(f"Failed to upload data to blob: {str(e)}")
-        return
-
-@app.route('/fetch_data', methods=['GET'])
+@app.route('/fetch-data', methods=['GET'])
 def fetch_data():
     for platform, users in platforms_users.items():
-        try:
-            worksheet = spreadsheet.worksheet(platform)
-        except gspread.exceptions.WorksheetNotFound:
-            worksheet = spreadsheet.add_worksheet(title=platform, rows="100", cols="20")
-
-        all_data = []
         for user in users:
-            data = get_socialblade_data(platform, user)
-            if data is None:
-                continue
-
-            try:
-                flat_data = pd.json_normalize(data)
-            except Exception as e:
-                app.logger.error(f"Failed to normalize data for {platform}/{user}: {str(e)}")
-                continue
-
-            headers = flat_data.columns.tolist()
-            headers = rename_headers(headers)
-            headers = [header for header in headers if header in flat_data.columns]  # Only keep headers present in flat_data
-            flat_data = flat_data[headers]
-            all_data.extend(flat_data.values.tolist())
-
-            # Add a delay here
-            time.sleep(1.1)  # Adjust the delay as needed to fit within your rate limits
-
-        if all_data:
-            batch_append_to_sheet(worksheet, headers, all_data)
-
-            # Create a CSV string from all_data
-            csv_data = pd.DataFrame(all_data, columns=headers).to_csv(index=False)
-
-            # Upload the CSV string to Azure Blob Storage
-            upload_to_blob(f"{platform}_data.csv", csv_data, blob_service_client)
-        else:
-            app.logger.error(f"No data fetched for platform {platform}")
-
-    return jsonify({'message': 'Data fetched successfully'}), 200
-
-@app.errorhandler(BadRequest)
-def handle_bad_request(e):
-    return jsonify({'message': str(e)}), 400
-
-@app.errorhandler(InternalServerError)
-def handle_internal_error(e):
-    app.logger.error(str(e))
-    return jsonify({'message': 'An internal error occurred.'}), 500
+            response = requests.get(api_url.format(user), headers={'CLIENT_ID': app.config['CLIENT_ID'], 'ACCESS_TOKEN': app.config['ACCESS_TOKEN']})
+            data = response.json()
+            df = pd.json_normalize(data)
+            df.columns = rename_headers(df.columns)
+            csv_data = df.to_csv(index=False)
+            blob_name = f'{platform}_{user}_{time.strftime("%Y%m%d-%H%M%S")}.csv'
+            blob_client = container_client.get_blob_client(blob_name)
+            blob_client.upload_blob(csv_data, blob_type="BlockBlob")
+    return jsonify({"status": "success"}), 200
 
 if __name__ == '__main__':
     app.run(debug=True)
