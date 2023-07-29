@@ -198,15 +198,17 @@ def rename_headers(headers: List[str]) -> List[str]:
 @app.route('/fetch-data', methods=['GET'])
 def fetch_data():
     for platform, users in platforms_users.items():
+        platform_df = pd.DataFrame()  # Create an empty DataFrame for the platform
         for user in users:
-            response = requests.get(api_url.format(user), headers={'CLIENT_ID': app.config['CLIENT_ID'], 'ACCESS_TOKEN': app.config['ACCESS_TOKEN']})
+            response = requests.get(api_url.format(platform, user), headers={'CLIENT_ID': app.config['CLIENT_ID'], 'ACCESS_TOKEN': app.config['ACCESS_TOKEN']})
             data = response.json()
             df = pd.json_normalize(data)
             df.columns = rename_headers(df.columns)
-            csv_data = df.to_csv(index=False)
-            blob_name = f'{platform}_{user}_{time.strftime("%Y%m%d-%H%M%S")}.csv'
-            blob_client = container_client.get_blob_client(blob_name)
-            blob_client.upload_blob(csv_data, blob_type="BlockBlob")
+            platform_df = platform_df.append(df, ignore_index=True)  # Append user's data to the platform DataFrame
+        csv_data = platform_df.to_csv(index=False)  # Convert the entire platform DataFrame to CSV
+        blob_name = f'{platform}_{time.strftime("%Y%m%d-%H%M%S")}.csv'
+        blob_client = container_client.get_blob_client(blob_name)
+        blob_client.upload_blob(csv_data, blob_type="BlockBlob")
     return jsonify({"status": "success"}), 200
 
 if __name__ == '__main__':
