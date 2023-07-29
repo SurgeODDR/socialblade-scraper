@@ -207,22 +207,19 @@ def fetch_data():
                     'token': app.config['ACCESS_TOKEN']
                 }
             )
+
+            if not response.ok:
+                app.logger.error(f"Failed to fetch data for {platform}/{user}, status code: {response.status_code}")
+                continue
             
-            # Print the response before parsing:
-            print(response.text)
-            
-            # Check the response status code:
-            print(response.status_code)
-            
-            # Check for JSON response:
-            if response.status_code != 200 or not response.text.strip():
-                print(f"Error fetching data for {user} on {platform}. Skipping.")
+            if 'application/json' not in response.headers['Content-Type']:
+                app.logger.error(f"Unexpected content type for {platform}/{user}")
                 continue
 
             try:
                 data = response.json()
-            except requests.exceptions.RequestException as err:
-                print(f"Request error for {user} on {platform}: {err}")
+            except json.JSONDecodeError:
+                app.logger.error(f"Failed to decode JSON for {platform}/{user}")
                 continue
 
             df = pd.json_normalize(data)
