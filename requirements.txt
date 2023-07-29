@@ -13,3 +13,4 @@ google-auth-oauthlib
 google-auth-httplib2
 httplib2
 apscheduler
+azure-storage-blob
