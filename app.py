@@ -19,7 +19,7 @@ container_client = blob_service_client.get_container_client(container_name)
 app = Flask(__name__)
 app.config['CLIENT_ID'] = 'cli_6aabef3d2b6503a79f79bd84'
 app.config['ACCESS_TOKEN'] = '1ae13f00a2e97b3faf520cc4898d8c6e0d6abd325957f7e2a957c72eefc945d13dbd21df611ec1dfd36750f2c4479aa2c3fc5de2d02eb39c2f21b1ed9cdf4c6b'
-api_url = "https://matrix.sbapis.com/{}/statistics"
+api_url = "https://matrix.sbapis.com/b/{}/{}statistics"
 
 platforms_users = {
     "twitch": ["twistzztv", "jLcs2", "rekkles", "nisqyy", "bwipolol", "Cabochardlol", "caedrel", "spicalol", "jensen", "zyblol", "caedrel", "yamatocannon", "tenacityna", "kiittwy", "caedrel", "Rush", "mediccasts", "tifa_lol", "lizialol", "colomblbl", "karinak"],
@@ -201,11 +201,10 @@ def fetch_data():
             if not user:
                 return jsonify({"status": "error", "message": "user is empty"}), 400
             response = requests.get(
-                api_url.format(platform),
+                api_url.format(platform, user),
                 headers={
                     'clientid': app.config['CLIENT_ID'],
-                    'token': app.config['ACCESS_TOKEN'],
-                    'username': user
+                    'token': app.config['ACCESS_TOKEN']
                 }
             )
             data = response.json()
