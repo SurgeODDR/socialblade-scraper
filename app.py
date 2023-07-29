@@ -203,6 +203,27 @@ def rename_headers(headers: List[str]) -> List[str]:
     new_headers = [header_mapping.get(header, header) for header in headers if header not in ignore_columns]
     return new_headers
 
+def get_socialblade_data(platform: str, username: str) -> dict:
+    url = api_url.format(platform)
+    headers = {
+        "clientid": app.config['CLIENT_ID'],
+        "token": app.config['ACCESS_TOKEN'],
+        "query": username
+    }
+    response = requests.get(url, headers=headers)
+
+    if response.status_code != 200:
+        app.logger.error(f"Failed to get data from SocialBlade for {platform}/{username}. HTTP status code: {response.status_code}")
+        return None
+
+    try:
+        data = response.json()
+    except json.JSONDecodeError:
+        app.logger.error(f"Failed to decode JSON from SocialBlade response for {platform}/{username}")
+        return None
+
+    return data
+
 def upload_to_blob(blob_name, data, blob_service_client):
     blob_client = blob_service_client.get_blob_client(blob_name)
     
