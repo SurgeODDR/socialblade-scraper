@@ -87,7 +87,7 @@ ignore_columns = [
     "data.id.id",
 ]
 
-def rename_headers(headers: List[str]) -> List[str]:
+def rename_headers(headers: List[str]) -> dict:
     header_mapping = {
         "status.success": "Status Success",
         "data.statistics.total.media": "Total Media",
@@ -192,8 +192,8 @@ def rename_headers(headers: List[str]) -> List[str]:
         "data.daily": "Daily Data",
         "data.statistics.total.likes": "Total Likes"
     }
-    new_headers = [header_mapping.get(header, header) for header in headers if header not in ignore_columns]
-    return new_headers
+    new_header_mapping = {header: new_header for header, new_header in header_mapping.items() if header in headers and header not in ignore_columns}
+    return new_header_mapping
 
 @app.route('/fetch-data', methods=['GET'])
 def fetch_data():
@@ -203,7 +203,7 @@ def fetch_data():
             response = requests.get(api_url.format(platform, user), headers={'CLIENT_ID': app.config['CLIENT_ID'], 'ACCESS_TOKEN': app.config['ACCESS_TOKEN']})
             data = response.json()
             df = pd.json_normalize(data)
-            df.columns = rename_headers(df.columns)
+            df.rename(columns=rename_headers(df.columns), inplace=True)  # Rename columns using new_header_mapping
             platform_df = platform_df.append(df, ignore_index=True)  # Append user's data to the platform DataFrame
         csv_data = platform_df.to_csv(index=False)  # Convert the entire platform DataFrame to CSV
         blob_name = f'{platform}_{time.strftime("%Y%m%d-%H%M%S")}.csv'
