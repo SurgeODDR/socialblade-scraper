@@ -33,55 +33,55 @@ def run_script():
         blob_client = blob_service_client.get_blob_client(container=container_name, blob=json_file)
         data = json.loads(blob_client.download_blob().readall().decode('utf-8'))
 
-        # Extract the necessary data
-        extracted_data = []
-        for item in data:
-            if 'media' in item['data']['statistics']['total']:
-                row = [
-                    item['data']['id']['username'],
-                    item['data']['id']['display_name'],
-                    item['data']['statistics']['total']['media'],
-                    item['data']['statistics']['total']['followers'],
-                    item['data']['statistics']['total']['following'],
-                    item['data']['statistics']['total']['engagement_rate'],
-                    item['data']['statistics']['average']['likes'],
-                    item['data']['statistics']['average']['comments'],
-                ]
-                growth_followers = [item['data']['statistics']['growth']['followers'].get(str(i), None) for i in [1, 3, 7, 14, 30, 60, 90, 180, 365]]
-                growth_media = [item['data']['statistics']['growth']['media'].get(str(i), None) for i in [1, 3, 7, 14, 30, 60, 90, 180, 365]]
-            elif 'uploads' in item['data']['statistics']['total']:
-                row = [
-                    item['data']['id']['handle'],
-                    item['data']['id']['display_name'],
-                    item['data']['statistics']['total']['uploads'],
-                    item['data']['statistics']['total']['subscribers'],
-                    item['data']['statistics']['total']['views'],
-                ]
-                growth_followers = [item['data']['statistics']['growth']['subs'].get(str(i), None) for i in [1, 3, 7, 14, 30, 60, 90, 180, 365]]
-                growth_media = [item['data']['statistics']['growth']['vidviews'].get(str(i), None) for i in [1, 3, 7, 14, 30, 60, 90, 180, 365]]
-            elif 'followers' in item['data']['statistics']['total']:
-                row = [
-                    item['data']['id']['username'],
-                    item['data']['id']['display_name'],
-                    item['data']['statistics']['total']['followers'],
-                    item['data']['statistics']['total']['views'],
-                ]
-                growth_followers = [item['data']['statistics']['growth']['followers'].get(str(i), None) for i in [1, 3, 7, 14, 30, 60, 90, 180, 365]]
-                growth_media = []
-            elif json_file == "tiktok_talent_data.json":
-                row = [
-                    item['data']['id']['username'],
-                    item['data']['id']['display_name'],
-                    item['data']['statistics']['total']['followers'],
-                    item['data']['statistics']['total']['following'],
-                    item['data']['statistics']['total']['uploads'],
-                    item['data']['statistics']['total']['likes'],
-                ]
-                growth_followers = []
-                growth_media = []
-            row.extend(growth_followers)
-            row.extend(growth_media)
-            extracted_data.append(row)
+# Extract the necessary data
+extracted_data = []
+for item in data:
+    if 'media' in item['data']['statistics']['total']:
+        row = [
+            item['data']['id']['username'],
+            item['data']['id']['display_name'],
+            item['data']['statistics']['total']['media'],
+            item['data']['statistics']['total']['followers'],
+            item['data']['statistics']['total']['following'],
+            item['data']['statistics']['total']['engagement_rate'],
+            item['data']['statistics']['average']['likes'],
+            item['data']['statistics']['average']['comments'],
+        ]
+        growth_followers = [item['data']['statistics']['growth']['followers'].get(str(i), None) for i in [1, 3, 7, 14, 30, 60, 90, 180, 365]]
+        growth_media = [item['data']['statistics']['growth']['media'].get(str(i), None) for i in [1, 3, 7, 14, 30, 60, 90, 180, 365]]
+    elif 'uploads' in item['data']['statistics']['total']:
+        row = [
+            item['data']['id'].get('handle', None),
+            item['data']['id']['display_name'],
+            item['data']['statistics']['total']['uploads'],
+            item['data']['statistics']['total']['subscribers'],
+            item['data']['statistics']['total']['views'],
+        ]
+        growth_followers = [item['data']['statistics']['growth']['subs'].get(str(i), None) for i in [1, 3, 7, 14, 30, 60, 90, 180, 365]]
+        growth_media = [item['data']['statistics']['growth']['vidviews'].get(str(i), None) for i in [1, 3, 7, 14, 30, 60, 90, 180, 365]]
+    elif 'followers' in item['data']['statistics']['total']:
+        row = [
+            item['data']['id']['username'],
+            item['data']['id']['display_name'],
+            item['data']['statistics']['total']['followers'],
+            item['data']['statistics']['total']['views'],
+        ]
+        growth_followers = [item['data']['statistics']['growth']['followers'].get(str(i), None) for i in [1, 3, 7, 14, 30, 60, 90, 180, 365]]
+        growth_media = []
+    elif json_file == "tiktok_talent_data.json":
+        row = [
+            item['data']['id']['username'],
+            item['data']['id']['display_name'],
+            item['data']['statistics']['total']['followers'],
+            item['data']['statistics']['total']['following'],
+            item['data']['statistics']['total']['uploads'],
+            item['data']['statistics']['total']['likes'],
+        ]
+        growth_followers = []
+        growth_media = []
+    row.extend(growth_followers)
+    row.extend(growth_media)
+    extracted_data.append(row)
 
         # Append the data to the Google Spreadsheet
         worksheet = spreadsheet.add_worksheet(title=json_file.replace(".json", ""), rows="1", cols="1")
