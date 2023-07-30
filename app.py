@@ -1,5 +1,6 @@
 from flask import Flask
 import json
+import time  # Import the time module
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
 from azure.storage.blob import BlobServiceClient
@@ -137,6 +138,7 @@ def run_script():
         worksheet.insert_row(headers, index=1)
         for row in extracted_data:
             worksheet.append_row(row)
+            time.sleep(1)  # Sleep for 1 second between write requests
 
     return "Script executed"
 
