@@ -123,4 +123,10 @@ def run_script():
 
         worksheet = spreadsheet.add_worksheet(title=json_file.replace(".json", ""), rows="1", cols="1")
         worksheet.insert_row(headers, index=1)
-        for row in extracted_data
+        for row in extracted_data:
+            worksheet.append_row(row)
+
+    return "Script executed"
+
+if __name__ == '__main__':
+    app.run(debug=True)
