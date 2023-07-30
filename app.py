@@ -47,8 +47,8 @@ def run_script():
                     item['data']['statistics']['average']['likes'],
                     item['data']['statistics']['average']['comments'],
                 ]
-                growth_followers = [item['data']['statistics']['growth']['followers'][str(i)] for i in [1, 3, 7, 14, 30, 60, 90, 180, 365]]
-                growth_media = [item['data']['statistics']['growth']['media'][str(i)] for i in [1, 3, 7, 14, 30, 60, 90, 180, 365]]
+                growth_followers = [item['data']['statistics']['growth']['followers'].get(str(i), None) for i in [1, 3, 7, 14, 30, 60, 90, 180, 365]]
+                growth_media = [item['data']['statistics']['growth']['media'].get(str(i), None) for i in [1, 3, 7, 14, 30, 60, 90, 180, 365]]
             elif 'uploads' in item['data']['statistics']['total']:
                 row = [
                     item['data']['id']['handle'],
@@ -57,8 +57,8 @@ def run_script():
                     item['data']['statistics']['total']['subscribers'],
                     item['data']['statistics']['total']['views'],
                 ]
-                growth_followers = [item['data']['statistics']['growth']['subs'][str(i)] for i in [1, 3, 7, 14, 30, 60, 90, 180, 365]]
-                growth_media = [item['data']['statistics']['growth']['vidviews'][str(i)] for i in [1, 3, 7, 14, 30, 60, 90, 180, 365]]
+                growth_followers = [item['data']['statistics']['growth']['subs'].get(str(i), None) for i in [1, 3, 7, 14, 30, 60, 90, 180, 365]]
+                growth_media = [item['data']['statistics']['growth']['vidviews'].get(str(i), None) for i in [1, 3, 7, 14, 30, 60, 90, 180, 365]]
             elif 'followers' in item['data']['statistics']['total']:
                 row = [
                     item['data']['id']['username'],
@@ -66,7 +66,7 @@ def run_script():
                     item['data']['statistics']['total']['followers'],
                     item['data']['statistics']['total']['views'],
                 ]
-                growth_followers = [item['data']['statistics']['growth']['followers'][str(i)] for i in [1, 3, 7, 14, 30, 60, 90, 180, 365]]
+                growth_followers = [item['data']['statistics']['growth']['followers'].get(str(i), None) for i in [1, 3, 7, 14, 30, 60, 90, 180, 365]]
                 growth_media = []
             elif json_file == "tiktok_talent_data.json":
                 row = [
