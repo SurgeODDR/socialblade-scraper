@@ -11,7 +11,7 @@ app = Flask(__name__)
 def extract_instagram_data(item):
     total_stats = item['data']['statistics']['total']
     growth_stats = item['data']['statistics']['growth']
-    return [
+    row = [
         item['data']['id']['username'],
         item['data']['id']['display_name'],
         total_stats.get('media', None),
