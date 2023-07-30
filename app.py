@@ -33,11 +33,11 @@ def extract_instagram_data(item):
     return row, headers
 
 def extract_twitter_data(item):
-    total_stats = item['statistics']['total']
-    growth_stats = item['statistics']['growth']
+    total_stats = item['data']['statistics']['total']
+    growth_stats = item['data']['statistics']['growth']
     row = [
-        item['username'],
-        item['display_name'],
+        item['data']['id']['username'],
+        item['data']['id']['display_name'],
         total_stats.get('tweets', None),
         total_stats.get('followers', None),
         total_stats.get('following', None)
