@@ -9,26 +9,26 @@ from oauth2client.service_account import ServiceAccountCredentials
 app = Flask(__name__)
 
 def extract_instagram_data(item):
-    total_stats = item['statistics']['total']
-    growth_stats = item['statistics']['growth']
+    total_stats = item['data']['statistics']['total']
+    growth_stats = item['data']['statistics']['growth']
     return [
-        item['id']['username'],
-        item['id']['display_name'],
+        item['data']['id']['username'],
+        item['data']['id']['display_name'],
         total_stats.get('media', None),
         total_stats.get('followers', None),
         total_stats.get('following', None),
         total_stats.get('engagement_rate', None),
-        item['statistics']['average'].get('likes', None),
-        item['statistics']['average'].get('comments', None)
+        item['data']['statistics']['average'].get('likes', None),
+        item['data']['statistics']['average'].get('comments', None)
     ] + [growth_stats['followers'].get(str(i), None) for i in [1, 3, 7, 14, 30, 60, 90, 180, 365]] + \
         [growth_stats['media'].get(str(i), None) for i in [1, 3, 7, 14, 30, 60, 90, 180, 365]]
 
 def extract_twitter_data(item):
-    total_stats = item['statistics']['total']
-    growth_stats = item['statistics']['growth']
+    total_stats = item['data']['statistics']['total']  # Assuming the structure is similar to Instagram
+    growth_stats = item['data']['statistics']['growth']  # Assuming the structure is similar to Instagram
     return [
-        item['username'],
-        item['display_name'],
+        item['data']['username'],  # Assuming the structure is similar to Instagram
+        item['data']['display_name'],  # Assuming the structure is similar to Instagram
         total_stats.get('tweets', None),
         total_stats.get('followers', None),
         total_stats.get('following', None)
