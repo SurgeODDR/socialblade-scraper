@@ -9,31 +9,48 @@ from oauth2client.service_account import ServiceAccountCredentials
 app = Flask(__name__)
 
 def extract_instagram_data(item):
-    total_stats = item['data']['statistics']['total']
-    growth_stats = item['data']['statistics']['growth']
-    return [
-        item['data']['id']['username'],
-        item['data']['id']['display_name'],
+    total_stats = item['statistics']['total']
+    growth_stats = item['statistics']['growth']
+    row = [
+        item['id']['username'],
+        item['id']['display_name'],
         total_stats.get('media', None),
         total_stats.get('followers', None),
         total_stats.get('following', None),
         total_stats.get('engagement_rate', None),
-        item['data']['statistics']['average'].get('likes', None),
-        item['data']['statistics']['average'].get('comments', None)
+        item['statistics']['average'].get('likes', None),
+        item['statistics']['average'].get('comments', None)
     ] + [growth_stats['followers'].get(str(i), None) for i in [1, 3, 7, 14, 30, 60, 90, 180, 365]] + \
         [growth_stats['media'].get(str(i), None) for i in [1, 3, 7, 14, 30, 60, 90, 180, 365]]
+    headers = ['Username', 'Display Name', 'Total Media', 'Total Followers', 'Total Following',
+               'Total Engagement Rate', 'Average Likes', 'Average Comments',
+               '1 Day Followers Growth', '3 Days Followers Growth', '7 Days Followers Growth',
+               '14 Days Followers Growth', '30 Days Followers Growth', '60 Days Followers Growth',
+               '90 Days Followers Growth', '180 Days Followers Growth', '365 Days Followers Growth',
+               '1 Day Media Growth', '3 Days Media Growth', '7 Days Media Growth',
+               '14 Days Media Growth', '30 Days Media Growth', '60 Days Media Growth',
+               '90 Days Media Growth', '180 Days Media Growth', '365 Days Media Growth']
+    return row, headers
 
 def extract_twitter_data(item):
-    total_stats = item['data']['statistics']['total']  # Assuming the structure is similar to Instagram
-    growth_stats = item['data']['statistics']['growth']  # Assuming the structure is similar to Instagram
-    return [
-        item['data']['username'],  # Assuming the structure is similar to Instagram
-        item['data']['display_name'],  # Assuming the structure is similar to Instagram
+    total_stats = item['statistics']['total']
+    growth_stats = item['statistics']['growth']
+    row = [
+        item['username'],
+        item['display_name'],
         total_stats.get('tweets', None),
         total_stats.get('followers', None),
         total_stats.get('following', None)
     ] + [growth_stats['followers'].get(str(i), None) for i in [1, 3, 7, 14, 30, 60, 90, 180, 365]] + \
         [growth_stats['tweets'].get(str(i), None) for i in [1, 3, 7, 14, 30, 60, 90, 180, 365]]
+    headers = ['Username', 'Display Name', 'Total Tweets', 'Total Followers', 'Total Following',
+               '1 Day Followers Growth', '3 Days Followers Growth', '7 Days Followers Growth',
+               '14 Days Followers Growth', '30 Days Followers Growth', '60 Days Followers Growth',
+               '90 Days Followers Growth', '180 Days Followers Growth', '365 Days Followers Growth',
+               '1 Day Tweets Growth', '3 Days Tweets Growth', '7 Days Tweets Growth',
+               '14 Days Tweets Growth', '30 Days Tweets Growth', '60 Days Tweets Growth',
+               '90 Days Tweets Growth', '180 Days Tweets Growth', '365 Days Tweets Growth']
+    return row, headers
 
 def extract_tiktok_data(item):
     row = [
