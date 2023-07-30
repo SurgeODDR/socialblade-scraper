@@ -99,7 +99,7 @@ def run_script():
     key_vault_uri = "https://keyvaultxscrapingoddr.vault.azure.net/"
     credential = DefaultAzureCredential()
     client = SecretClient(vault_url=key_vault_uri, credential=credential)
-    google_api_credentials = client.get_secret("GoogleClientSecret2")
+    google_api_credentials = client.get_secret("YT-Scraper-web-googleservicekey")
 
     creds = ServiceAccountCredentials.from_json_keyfile_dict(json.loads(google_api_credentials.value))
     gc = gspread.authorize(creds)
